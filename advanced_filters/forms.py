@@ -67,7 +67,7 @@ class AdvancedFilterQueryForm(CleanWhiteSpacesMixin, forms.Form):
         label=_('Operator'),
         required=True, choices=OPERATORS, initial="iexact",
         widget=forms.Select(attrs={'class': 'query-operator'}))
-    value = VaryingTypeCharField(required=True, widget=forms.TextInput(
+    value = VaryingTypeCharField(required=False, widget=forms.TextInput(
         attrs={'class': 'query-value'}), label=_('Value'))
     value_from = forms.DateTimeField(widget=forms.HiddenInput(
         attrs={'class': 'query-dt-from'}), required=False)
@@ -93,7 +93,7 @@ class AdvancedFilterQueryForm(CleanWhiteSpacesMixin, forms.Form):
             formdata = self.cleaned_data
         key = "{field}__{operator}".format(**formdata)
         if formdata['operator'] == "isnull":
-            return {key: None}
+            return {key: True}
         elif formdata['operator'] == "istrue":
             return {formdata['field']: True}
         elif formdata['operator'] == "isfalse":
@@ -128,12 +128,11 @@ class AdvancedFilterQueryForm(CleanWhiteSpacesMixin, forms.Form):
         else:
             mfield = mfield[-1]  # get the field object
 
-        if query_data['value'] is None:
-            query_data['operator'] = "isnull"
-        elif query_data['value'] is True:
-            query_data['operator'] = "istrue"
-        elif query_data['value'] is False:
-            query_data['operator'] = "isfalse"
+        if operator != 'isnull' and isinstance(query_data['value'], bool):
+            if query_data['value']:
+                query_data['operator'] = "istrue"
+            else:
+                query_data['operator'] = "isfalse"
         else:
             if isinstance(mfield, DateField):
                 # this is a date/datetime field
